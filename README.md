@@ -245,21 +245,7 @@ To make a user an admin:
 
 ---
 
-## 📸 Screenshots
 
-### Landing Page
-Beautiful gradient hero with clear call-to-action
-
-### Report Issue
-Interactive map picker with multilingual voice input
-
-### Admin Dashboard
-Real-time ticket management with geographic heatmap
-
-### Transparency Page
-Public statistics with glassmorphism UI
-
----
 
 ## 🚀 Deployment
 
