@@ -1,8 +1,8 @@
 {
-    "buildCommand": "npm run build",
+    "buildCommand": "npm run vercel-build",
     "outputDirectory": ".next",
     "devCommand": "npm run dev",
-    "installCommand": "npm install",
+    "installCommand": "npm install --legacy-peer-deps",
     "framework": "nextjs",
     "regions": [
         "bom1"
