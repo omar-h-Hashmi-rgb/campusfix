@@ -179,21 +179,13 @@ export default function DashboardPage() {
                         </h1>
                         <p className="text-zinc-400">Track your campus maintenance requests</p>
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <Link
-                            href="/report"
-                            className="flex items-center space-x-2 px-6 py-3 rounded-xl indigo-glow text-white font-medium"
-                        >
-                            <Plus className="w-5 h-5" />
-                            <span>Report Issue</span>
-                        </Link>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center space-x-2 px-4 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 smooth-transition text-white"
-                        >
-                            <LogOut className="w-5 h-5" />
-                        </button>
-                    </div>
+                    <Link
+                        href="/report"
+                        className="flex items-center space-x-2 px-6 py-3 rounded-xl indigo-glow text-white font-medium"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>Report Issue</span>
+                    </Link>
                 </div>
 
                 {/* Stats Cards */}
