@@ -32,8 +32,15 @@ export default function Home() {
                         and automated resolution tracking. Built for the modern campus.
                     </p>
 
-                    {/* CTA Button */}
-                    <div className="flex justify-center">
+                    {/* CTA Buttons */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link
+                            href="/onboarding"
+                            className="group inline-flex items-center space-x-2 px-8 py-4 rounded-xl backdrop-blur-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-lg smooth-transition"
+                        >
+                            <Sparkles className="w-5 h-5" />
+                            <span>Take a Tour</span>
+                        </Link>
                         <Link
                             href="/login"
                             className="group inline-flex items-center space-x-2 px-8 py-4 rounded-xl indigo-glow text-white font-semibold text-lg"
@@ -45,7 +52,7 @@ export default function Home() {
 
                     {/* Feature Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
-                        <div className="glass rounded-2xl p-6 smooth-transition hover:border-indigo-500/50">
+                        <div className="glass-premium rounded-2xl p-6 md:p-8 hover-lift smooth-transition hover:border-indigo-500/50">
                             <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-4">
                                 <Zap className="w-6 h-6 text-indigo-400" />
                             </div>
@@ -55,7 +62,7 @@ export default function Home() {
                             </p>
                         </div>
 
-                        <div className="glass rounded-2xl p-6 smooth-transition hover:border-indigo-500/50">
+                        <div className="glass-premium rounded-2xl p-6 md:p-8 hover-lift smooth-transition hover:border-purple-500/50">
                             <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
                                 <Shield className="w-6 h-6 text-purple-400" />
                             </div>
@@ -65,7 +72,7 @@ export default function Home() {
                             </p>
                         </div>
 
-                        <div className="glass rounded-2xl p-6 smooth-transition hover:border-indigo-500/50">
+                        <div className="glass-premium rounded-2xl p-6 md:p-8 hover-lift smooth-transition hover:border-pink-500/50">
                             <div className="w-12 h-12 rounded-xl bg-pink-500/20 flex items-center justify-center mb-4">
                                 <Sparkles className="w-6 h-6 text-pink-400" />
                             </div>

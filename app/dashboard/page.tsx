@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild } from 'firebase/database';
-import { LogOut, Plus, Clock, CheckCircle, AlertCircle, MapPin, Tag } from 'lucide-react';
+import { LogOut, Plus, Clock, CheckCircle, AlertCircle, MapPin, Tag, ChevronUp, Trophy, Award } from 'lucide-react';
+import { getUserProfile, upvoteTicket, getLevelBadgeStyle, UserProfile } from '@/lib/karma';
 import Link from 'next/link';
 
 interface Ticket {
@@ -28,6 +29,8 @@ interface Ticket {
     ai_priority?: number;
     ai_summary?: string;
     processed?: boolean;
+    upvotes?: number;
+    upvotedBy?: string[];
 }
 
 export default function DashboardPage() {
@@ -35,12 +38,21 @@ export default function DashboardPage() {
     const router = useRouter();
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [loadingTickets, setLoadingTickets] = useState(true);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [upvoting, setUpvoting] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user && !loading) {
             router.push('/login');
         }
     }, [user, loading, router]);
+
+    // Load user profile for karma
+    useEffect(() => {
+        if (!user?.email) return;
+
+        getUserProfile(user.email).then(setUserProfile);
+    }, [user]);
 
     useEffect(() => {
         if (!user) return;
@@ -76,6 +88,22 @@ export default function DashboardPage() {
             router.push('/');
         } catch (error) {
             console.error('Logout failed:', error);
+        }
+    };
+
+    const handleUpvote = async (ticketId: string, ticketOwnerEmail: string) => {
+        if (!user?.email || upvoting) return;
+
+        setUpvoting(ticketId);
+        try {
+            await upvoteTicket(ticketId, user.email, ticketOwnerEmail);
+            // Refresh user profile to show updated karma
+            const updated = await getUserProfile(user.email);
+            setUserProfile(updated);
+        } catch (error) {
+            console.error('Upvote error:', error);
+        } finally {
+            setUpvoting(null);
         }
     };
 
@@ -155,7 +183,26 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    {/* Karma Card */}
+                    <div className="backdrop-blur-md bg-gradient-to-br from-white/5 to-white/10 rounded-2xl p-6 border border-white/10 shadow-xl shadow-black/20">
+                        <div className="flex items-center justify-between mb-3">
+                            <div>
+                                <p className="text-sm text-zinc-400 mb-1">Total Karma</p>
+                                <p className="text-3xl font-bold text-white">{userProfile?.karma || 0}</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                                <Trophy className="w-6 h-6 text-yellow-400" />
+                            </div>
+                        </div>
+                        {userProfile && (
+                            <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full border text-xs font-medium ${getLevelBadgeStyle(userProfile.level)}`}>
+                                <Award className="w-3 h-3" />
+                                <span>{userProfile.level} Contributor</span>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="glass rounded-2xl p-6 border border-white/10">
                         <div className="flex items-center justify-between">
                             <div>
@@ -247,6 +294,19 @@ export default function DashboardPage() {
 
                                 <div className="flex items-center justify-between text-sm">
                                     <div className="flex items-center space-x-4">
+                                        {/* Upvote Button */}
+                                        <button
+                                            onClick={() => handleUpvote(ticket.id, ticket.userEmail)}
+                                            disabled={upvoting === ticket.id}
+                                            className={`flex items-center space-x-2 px-3 py-2 rounded-lg smooth-transition ${ticket.upvotedBy?.includes(user.email || '')
+                                                    ? 'bg-indigo-500 text-white'
+                                                    : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                } ${upvoting === ticket.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            <ChevronUp className="w-4 h-4" />
+                                            <span className="font-medium">{ticket.upvotes || 0}</span>
+                                        </button>
+
                                         <div className="flex items-center space-x-1 text-zinc-400">
                                             <Tag className="w-4 h-4" />
                                             <span>{ticket.ai_category || ticket.category}</span>

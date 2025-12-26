@@ -7,6 +7,7 @@ import { useToast } from '@/context/ToastContext';
 import { database } from '@/lib/firebase';
 import { ref as dbRef, push, set } from 'firebase/database';
 import { analyzeTicketWithAI } from '@/lib/gemini';
+import { awardTicketReportKarma } from '@/lib/karma';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import { Upload, MapPin, FileText, Tag, Image as ImageIcon, Send, ChevronRight, ChevronLeft, Sparkles, Mic, MicOff, Globe } from 'lucide-react';
@@ -183,6 +184,9 @@ export default function ReportPage() {
                 native_response: aiAnalysis.native_response || null,
                 ai_fix_guide: null,
                 processed: true,
+                // Upvoting fields
+                upvotes: 0,
+                upvotedBy: [],
             };
 
             // Save to Realtime Database
@@ -190,8 +194,13 @@ export default function ReportPage() {
             const newTicketRef = push(ticketsRef);
             await set(newTicketRef, ticketData);
 
+            // Award karma for reporting ticket (+10 points)
+            if (user.email) {
+                await awardTicketReportKarma(user.email);
+            }
+
             // Success
-            showToast('Issue reported successfully!', 'success');
+            showToast('Issue reported successfully! +10 Karma earned!', 'success');
             router.push('/dashboard');
         } catch (error) {
             console.error('Error submitting ticket:', error);

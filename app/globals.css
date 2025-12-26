@@ -24,6 +24,46 @@ body {
 
 @layer utilities {
 
+  /* Premium Glassmorphism Effects */
+  .glass-premium {
+    @apply backdrop-blur-xl bg-white/10 border border-white/20;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .glass-card {
+    @apply backdrop-blur-md bg-white/5 border border-white/10;
+  }
+
+  .glass-strong {
+    @apply backdrop-blur-2xl bg-white/15 border border-white/25;
+  }
+
+  /* Hover Lift Effect */
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-5px);
+  }
+
+  /* Glow Effects */
+  .glow-indigo {
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+  }
+
+  .glow-indigo:hover {
+    box-shadow: 0 0 30px rgba(79, 70, 229, 0.6);
+  }
+
+  .glow-emerald {
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+  }
+
+  .glow-emerald:hover {
+    box-shadow: 0 0 30px rgba(52, 211, 153, 0.6);
+  }
+
   /* Custom indigo glow utility for premium buttons */
   .indigo-glow {
     @apply bg-indigo-500 hover:bg-indigo-600 transition-all duration-300;
@@ -34,7 +74,7 @@ body {
     box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
   }
 
-  /* Glassmorphism effect */
+  /* Glassmorphism effect (legacy support) */
   .glass {
     @apply backdrop-blur-md bg-white/5 border border-white/10;
   }
@@ -44,9 +84,18 @@ body {
     background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
   }
 
+  .gradient-dark {
+    background: linear-gradient(to bottom right, #111827, #000000, #1e1b4b);
+  }
+
   /* Smooth transitions */
   .smooth-transition {
     @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Typography */
+  .heading-premium {
+    @apply font-bold tracking-tight;
   }
 
   /* Toast slide-in animation */

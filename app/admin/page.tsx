@@ -18,9 +18,12 @@ import {
     Eye,
     Wrench,
     X,
+    ChevronUp,
+    ArrowUpDown,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { generateFixGuide } from '@/lib/gemini';
+import { upvoteTicket } from '@/lib/karma';
 
 const AdminHeatmap = dynamic(() => import('@/components/AdminHeatmap'), {
     ssr: false,
@@ -53,6 +56,8 @@ interface Ticket {
     ai_fix_guide?: string;
     translated_text?: string;
     processed?: boolean;
+    upvotes?: number;
+    upvotedBy?: string[];
 }
 
 export default function AdminPage() {
@@ -66,6 +71,8 @@ export default function AdminPage() {
     const [fixGuide, setFixGuide] = useState<string>('');
     const [generatingGuide, setGeneratingGuide] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [sortByUpvotes, setSortByUpvotes] = useState(false);
+    const [upvoting, setUpvoting] = useState<string | null>(null);
 
     useEffect(() => {
         if (!loading && (!user || !isAdmin())) {
@@ -80,12 +87,18 @@ export default function AdminPage() {
         const unsubscribe = onValue(ticketsRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const ticketsList: Ticket[] = Object.entries(data)
+                let ticketsList: Ticket[] = Object.entries(data)
                     .map(([id, ticket]: [string, any]) => ({
                         id,
                         ...ticket,
-                    }))
-                    .sort((a, b) => (b.ai_priority || 5) - (a.ai_priority || 5)); // Sort by priority
+                    }));
+
+                // Sort by upvotes or priority
+                if (sortByUpvotes) {
+                    ticketsList.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+                } else {
+                    ticketsList.sort((a, b) => (b.ai_priority || 5) - (a.ai_priority || 5));
+                }
 
                 setTickets(ticketsList);
             } else {
@@ -95,7 +108,20 @@ export default function AdminPage() {
         });
 
         return () => unsubscribe();
-    }, [user, isAdmin]);
+    }, [user, isAdmin, sortByUpvotes]);
+
+    const handleUpvote = async (ticketId: string, ticketOwnerEmail: string) => {
+        if (!user?.email || upvoting) return;
+
+        setUpvoting(ticketId);
+        try {
+            await upvoteTicket(ticketId, user.email, ticketOwnerEmail);
+        } catch (error) {
+            console.error('Upvote error:', error);
+        } finally {
+            setUpvoting(null);
+        }
+    };
 
     const syncToGoogleSheets = () => {
         setIsSyncing(true);
@@ -216,25 +242,39 @@ export default function AdminPage() {
                             <p className="text-zinc-400">Campus-wide maintenance oversight</p>
                         </div>
                     </div>
-                    <button
-                        onClick={syncToGoogleSheets}
-                        disabled={isSyncing}
-                        className="flex items-center space-x-2 px-6 py-3 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-300 font-medium smooth-transition disabled:opacity-50"
-                    >
-                        {isSyncing ? (
-                            <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-green-400"></div>
-                                <span>Syncing...</span>
-                            </>
-                        ) : (
-                            <>
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
-                                </svg>
-                                <span>Sync to Analytics</span>
-                            </>
-                        )}
-                    </button>
+                    <div className="flex items-center space-x-3">
+                        {/* Sort Toggle */}
+                        <button
+                            onClick={() => setSortByUpvotes(!sortByUpvotes)}
+                            className={`flex items-center space-x-2 px-6 py-3 rounded-xl border font-medium smooth-transition ${sortByUpvotes
+                                ? 'bg-indigo-500 border-indigo-500 text-white'
+                                : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'
+                                }`}
+                        >
+                            <ArrowUpDown className="w-5 h-5" />
+                            <span>{sortByUpvotes ? 'Most Upvoted' : 'By Priority'}</span>
+                        </button>
+
+                        <button
+                            onClick={syncToGoogleSheets}
+                            disabled={isSyncing}
+                            className="flex items-center space-x-2 px-6 py-3 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-300 font-medium smooth-transition disabled:opacity-50"
+                        >
+                            {isSyncing ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-green-400"></div>
+                                    <span>Syncing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
+                                    </svg>
+                                    <span>Sync to Analytics</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Grid */}
@@ -336,6 +376,19 @@ export default function AdminPage() {
 
                                         <div className="flex items-center justify-between text-xs mb-3">
                                             <div className="flex items-center space-x-3">
+                                                {/* Upvote Button */}
+                                                <button
+                                                    onClick={() => handleUpvote(ticket.id, ticket.userEmail)}
+                                                    disabled={upvoting === ticket.id}
+                                                    className={`flex items-center space-x-1 px-2 py-1 rounded-lg smooth-transition ${ticket.upvotedBy?.includes(user.email || '')
+                                                            ? 'bg-indigo-500 text-white'
+                                                            : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                        } ${upvoting === ticket.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    <ChevronUp className="w-3 h-3" />
+                                                    <span className="font-medium text-xs">{ticket.upvotes || 0}</span>
+                                                </button>
+
                                                 <div className="flex items-center space-x-1 text-zinc-400">
                                                     <Tag className="w-3 h-3" />
                                                     <span>{ticket.ai_category || ticket.category}</span>
@@ -424,57 +477,59 @@ export default function AdminPage() {
             </div>
 
             {/* Fix Guide Modal */}
-            {selectedTicket && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="glass rounded-2xl p-6 max-w-2xl w-full border border-white/10 max-h-[80vh] overflow-y-auto"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-2">
-                                <Wrench className="w-6 h-6 text-purple-400" />
-                                <h3 className="text-2xl font-semibold text-white">AI Fix Guide</h3>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setSelectedTicket(null);
-                                    setFixGuide('');
-                                }}
-                                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 smooth-transition"
-                            >
-                                <X className="w-5 h-5 text-zinc-400" />
-                            </button>
-                        </div>
-
-                        <div className="mb-4 p-4 bg-zinc-900 rounded-xl">
-                            <h4 className="text-lg font-semibold text-white mb-1">{selectedTicket.title}</h4>
-                            <p className="text-sm text-zinc-400">{selectedTicket.ai_category || selectedTicket.category}</p>
-                        </div>
-
-                        {generatingGuide ? (
-                            <div className="flex flex-col items-center justify-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-                                <p className="text-zinc-400">AI is generating fix guide...</p>
-                            </div>
-                        ) : fixGuide ? (
-                            <div className="prose prose-invert max-w-none">
-                                <div className="p-4 bg-zinc-900 rounded-xl text-zinc-300 whitespace-pre-wrap">
-                                    {fixGuide}
+            {
+                selectedTicket && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="glass rounded-2xl p-6 max-w-2xl w-full border border-white/10 max-h-[80vh] overflow-y-auto"
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-2">
+                                    <Wrench className="w-6 h-6 text-purple-400" />
+                                    <h3 className="text-2xl font-semibold text-white">AI Fix Guide</h3>
                                 </div>
+                                <button
+                                    onClick={() => {
+                                        setSelectedTicket(null);
+                                        setFixGuide('');
+                                    }}
+                                    className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 smooth-transition"
+                                >
+                                    <X className="w-5 h-5 text-zinc-400" />
+                                </button>
                             </div>
-                        ) : selectedTicket.ai_fix_guide ? (
-                            <div className="prose prose-invert max-w-none">
-                                <div className="p-4 bg-zinc-900 rounded-xl text-zinc-300 whitespace-pre-wrap">
-                                    {selectedTicket.ai_fix_guide}
+
+                            <div className="mb-4 p-4 bg-zinc-900 rounded-xl">
+                                <h4 className="text-lg font-semibold text-white mb-1">{selectedTicket.title}</h4>
+                                <p className="text-sm text-zinc-400">{selectedTicket.ai_category || selectedTicket.category}</p>
+                            </div>
+
+                            {generatingGuide ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+                                    <p className="text-zinc-400">AI is generating fix guide...</p>
                                 </div>
-                            </div>
-                        ) : (
-                            <p className="text-zinc-400 text-center py-8">No fix guide available yet.</p>
-                        )}
-                    </motion.div>
-                </div>
-            )}
-        </div>
+                            ) : fixGuide ? (
+                                <div className="prose prose-invert max-w-none">
+                                    <div className="p-4 bg-zinc-900 rounded-xl text-zinc-300 whitespace-pre-wrap">
+                                        {fixGuide}
+                                    </div>
+                                </div>
+                            ) : selectedTicket.ai_fix_guide ? (
+                                <div className="prose prose-invert max-w-none">
+                                    <div className="p-4 bg-zinc-900 rounded-xl text-zinc-300 whitespace-pre-wrap">
+                                        {selectedTicket.ai_fix_guide}
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-zinc-400 text-center py-8">No fix guide available yet.</p>
+                            )}
+                        </motion.div>
+                    </div>
+                )
+            }
+        </div >
     );
 }
