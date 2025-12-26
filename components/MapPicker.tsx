@@ -6,9 +6,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import 'leaflet-geosearch/dist/geosearch.css';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Loader2 } from 'lucide-react';
 
 interface MapPickerProps {
   onLocationSelect: (lat: number, lng: number) => void;
+  onLocationNameDetected?: (name: string) => void; // New prop for building name
   initialLat?: number;
   initialLng?: number;
 }
@@ -131,15 +134,112 @@ function SearchField({
 
 export default function MapPicker({
   onLocationSelect,
+  onLocationNameDetected,
   initialLat = 19.0726, // Somaiya Vidyavihar University
   initialLng = 72.8978
 }: MapPickerProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [searchPosition, setSearchPosition] = useState<L.LatLng | null>(null);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [detectedLocationName, setDetectedLocationName] = useState<string>('');
+  const [gpsError, setGpsError] = useState<string>('');
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Reverse Geocoding using Nominatim
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'CampusFix-AI/1.0' // Required by Nominatim
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Reverse geocoding failed');
+      }
+
+      const data = await response.json();
+
+      // Extract building/location name
+      const locationName =
+        data.address?.building ||
+        data.address?.university ||
+        data.address?.college ||
+        data.address?.school ||
+        data.address?.amenity ||
+        data.address?.road ||
+        data.address?.suburb ||
+        data.display_name?.split(',')[0] ||
+        'Unknown Location';
+
+      setDetectedLocationName(locationName);
+
+      if (onLocationNameDetected) {
+        onLocationNameDetected(locationName);
+      }
+
+      return locationName;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return 'Location detected';
+    }
+  };
+
+  // GPS Detection
+  const detectMyLocation = () => {
+    if (!navigator.geolocation) {
+      setGpsError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsDetectingLocation(true);
+    setGpsError('');
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Update map position
+        setSearchPosition(L.latLng(latitude, longitude));
+        onLocationSelect(latitude, longitude);
+
+        // Reverse geocode to get building name
+        await reverseGeocode(latitude, longitude);
+
+        setIsDetectingLocation(false);
+      },
+      (error) => {
+        console.error('GPS error:', error);
+        let errorMessage = 'Unable to detect location';
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied. Please enable location access.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable. Try again.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out. Try again.';
+            break;
+        }
+
+        setGpsError(errorMessage);
+        setIsDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
 
   const handleSearchResult = (lat: number, lng: number) => {
     setSearchPosition(L.latLng(lat, lng));
@@ -154,8 +254,78 @@ export default function MapPicker({
   }
 
   return (
-    <div className="w-full h-[400px] rounded-xl overflow-hidden border border-white/10 shadow-lg">
-      <style jsx global>{`
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 15 }}
+    >
+      {/* GPS Detection Button */}
+      <motion.button
+        type="button"
+        onClick={detectMyLocation}
+        disabled={isDetectingLocation}
+        className={`w-full px-6 py-3 rounded-xl font-medium smooth-transition ${isDetectingLocation
+          ? 'bg-indigo-500/30 cursor-not-allowed'
+          : 'bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30'
+          } text-white flex items-center justify-center space-x-2`}
+        whileHover={{ scale: isDetectingLocation ? 1 : 1.02 }}
+        whileTap={{ scale: isDetectingLocation ? 1 : 0.98 }}
+      >
+        {isDetectingLocation ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Detecting your location...</span>
+          </>
+        ) : (
+          <>
+            <MapPin className="w-5 h-5" />
+            <span>Detect My Building</span>
+          </>
+        )}
+      </motion.button>
+
+      {/* Detected Location Name */}
+      <AnimatePresence>
+        {detectedLocationName && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="px-4 py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30"
+          >
+            <p className="text-sm text-emerald-300 flex items-center space-x-2">
+              <MapPin className="w-4 h-4" />
+              <span>Detected: <strong>{detectedLocationName}</strong></span>
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* GPS Error */}
+      <AnimatePresence>
+        {gpsError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30"
+          >
+            <p className="text-sm text-red-300">{gpsError}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Map Container with Glassmorphism */}
+      <motion.div
+        className="w-full h-[400px] rounded-xl overflow-hidden backdrop-blur-md bg-white/5 border border-white/10 shadow-lg"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+      >
+        <style jsx global>{`
         /* Premium dark theme for search bar */
         .leaflet-control-geosearch {
           background: rgba(24, 24, 27, 0.95) !important;
@@ -246,22 +416,23 @@ export default function MapPicker({
         }
       `}</style>
 
-      <MapContainer
-        center={[initialLat, initialLng]}
-        zoom={13}
-        style={{ height: '100%', width: '100%' }}
-        className="z-0"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <SearchField onSearchResult={handleSearchResult} />
-        <LocationMarker
-          onLocationSelect={onLocationSelect}
-          searchPosition={searchPosition}
-        />
-      </MapContainer>
-    </div>
+        <MapContainer
+          center={[initialLat, initialLng]}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          className="z-0"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <SearchField onSearchResult={handleSearchResult} />
+          <LocationMarker
+            onLocationSelect={onLocationSelect}
+            searchPosition={searchPosition}
+          />
+        </MapContainer>
+      </motion.div>
+    </motion.div>
   );
 }

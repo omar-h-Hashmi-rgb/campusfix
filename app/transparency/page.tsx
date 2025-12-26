@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { database } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { motion } from 'framer-motion';
@@ -54,24 +54,29 @@ export default function TransparencyPage() {
         return () => unsubscribe();
     }, []);
 
-    const stats = {
+    const stats = useMemo(() => ({
         total: tickets.length,
         resolved: tickets.filter((t) => t.status === 'resolved').length,
         resolutionRate: tickets.length > 0 ? Math.round((tickets.filter((t) => t.status === 'resolved').length / tickets.length) * 100) : 0,
-    };
+    }), [tickets]);
 
-    const recentFixes = tickets
-        .filter((t) => t.status === 'resolved')
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 5);
+    const recentFixes = useMemo(() =>
+        tickets
+            .filter((t) => t.status === 'resolved')
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 5),
+        [tickets]
+    );
 
     // Find hotspot (most reported category)
-    const categoryCount: { [key: string]: number } = {};
-    tickets.forEach((ticket) => {
-        const cat = ticket.ai_category || ticket.category;
-        categoryCount[cat] = (categoryCount[cat] || 0) + 1;
-    });
-    const hotspot = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+    const hotspot = useMemo(() => {
+        const categoryCount: { [key: string]: number } = {};
+        tickets.forEach((ticket) => {
+            const cat = ticket.ai_category || ticket.category;
+            categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+        });
+        return Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+    }, [tickets]);
 
     if (loading) {
         return (

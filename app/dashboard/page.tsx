@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { database } from '@/lib/firebase';
@@ -8,6 +8,14 @@ import { ref, onValue, query, orderByChild } from 'firebase/database';
 import { LogOut, Plus, Clock, CheckCircle, AlertCircle, MapPin, Tag, ChevronUp, Trophy, Award } from 'lucide-react';
 import { getUserProfile, upvoteTicket, getLevelBadgeStyle, UserProfile } from '@/lib/karma';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import TimelineSkeleton from '@/components/TimelineSkeleton';
+
+// Lazy load LiveTimeline for better performance
+const LiveTimeline = dynamic(() => import('@/components/LiveTimeline'), {
+    ssr: false,
+    loading: () => <TimelineSkeleton />
+});
 
 interface Ticket {
     id: string;
@@ -31,6 +39,12 @@ interface Ticket {
     processed?: boolean;
     upvotes?: number;
     upvotedBy?: string[];
+    history?: Array<{
+        status: string;
+        timestamp: number;
+        message?: string;
+        updatedBy?: string;
+    }>;
 }
 
 export default function DashboardPage() {
@@ -82,16 +96,16 @@ export default function DashboardPage() {
         return () => unsubscribe();
     }, [user]);
 
-    const handleLogout = async () => {
+    const handleLogout = useCallback(async () => {
         try {
             await logout();
             router.push('/');
         } catch (error) {
             console.error('Logout failed:', error);
         }
-    };
+    }, [logout, router]);
 
-    const handleUpvote = async (ticketId: string, ticketOwnerEmail: string) => {
+    const handleUpvote = useCallback(async (ticketId: string, ticketOwnerEmail: string) => {
         if (!user?.email || upvoting) return;
 
         setUpvoting(ticketId);
@@ -105,7 +119,7 @@ export default function DashboardPage() {
         } finally {
             setUpvoting(null);
         }
-    };
+    }, [user, upvoting]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -299,8 +313,8 @@ export default function DashboardPage() {
                                             onClick={() => handleUpvote(ticket.id, ticket.userEmail)}
                                             disabled={upvoting === ticket.id}
                                             className={`flex items-center space-x-2 px-3 py-2 rounded-lg smooth-transition ${ticket.upvotedBy?.includes(user.email || '')
-                                                    ? 'bg-indigo-500 text-white'
-                                                    : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                ? 'bg-indigo-500 text-white'
+                                                : 'bg-white/10 text-white/60 hover:bg-white/20'
                                                 } ${upvoting === ticket.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
                                             <ChevronUp className="w-4 h-4" />
@@ -332,6 +346,15 @@ export default function DashboardPage() {
                                         })}
                                     </span>
                                 </div>
+
+                                {/* Real-Time Status Timeline */}
+                                {ticket.history && ticket.history.length > 0 && (
+                                    <div className="mt-6 pt-6 border-t border-white/10">
+                                        <Suspense fallback={<TimelineSkeleton />}>
+                                            <LiveTimeline history={ticket.history} />
+                                        </Suspense>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

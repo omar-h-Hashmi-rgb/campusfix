@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { database } from '@/lib/firebase';
@@ -58,6 +58,12 @@ interface Ticket {
     processed?: boolean;
     upvotes?: number;
     upvotedBy?: string[];
+    history?: Array<{
+        status: string;
+        timestamp: number;
+        message?: string;
+        updatedBy?: string;
+    }>;
 }
 
 export default function AdminPage() {
@@ -110,7 +116,7 @@ export default function AdminPage() {
         return () => unsubscribe();
     }, [user, isAdmin, sortByUpvotes]);
 
-    const handleUpvote = async (ticketId: string, ticketOwnerEmail: string) => {
+    const handleUpvote = useCallback(async (ticketId: string, ticketOwnerEmail: string) => {
         if (!user?.email || upvoting) return;
 
         setUpvoting(ticketId);
@@ -121,9 +127,9 @@ export default function AdminPage() {
         } finally {
             setUpvoting(null);
         }
-    };
+    }, [user, upvoting]);
 
-    const syncToGoogleSheets = () => {
+    const syncToGoogleSheets = useCallback(() => {
         setIsSyncing(true);
         try {
             console.log('Syncing tickets to Google Sheets...', tickets.length, 'tickets');
@@ -151,18 +157,36 @@ export default function AdminPage() {
         } finally {
             setTimeout(() => setIsSyncing(false), 1000);
         }
-    };
+    }, [tickets, showToast]);
 
-    const updateTicketStatus = async (ticketId: string, newStatus: 'open' | 'in-progress' | 'resolved') => {
+    const updateTicketStatus = useCallback(async (ticketId: string, newStatus: 'open' | 'in-progress' | 'resolved') => {
         try {
             const ticketRef = ref(database, `tickets/${ticketId}`);
-            await update(ticketRef, { status: newStatus });
+
+            // Get current ticket to access history
+            const currentTicket = tickets.find(t => t.id === ticketId);
+            const currentHistory = currentTicket?.history || [];
+
+            // Create new history entry
+            const newHistoryEntry = {
+                status: newStatus,
+                timestamp: Date.now(),
+                message: `Status updated to ${newStatus}`,
+                updatedBy: user?.displayName || user?.email || 'Admin'
+            };
+
+            // Update ticket with new status and history
+            await update(ticketRef, {
+                status: newStatus,
+                history: [...currentHistory, newHistoryEntry]
+            });
+
             showToast(`Ticket marked as ${newStatus}`, 'success');
         } catch (error) {
             console.error('Error updating ticket:', error);
             showToast('Failed to update ticket status', 'error');
         }
-    };
+    }, [tickets, user, showToast]);
 
     const viewOnMap = (lat: number, lng: number) => {
         setFlyToLocation({ lat, lng });
@@ -381,8 +405,8 @@ export default function AdminPage() {
                                                     onClick={() => handleUpvote(ticket.id, ticket.userEmail)}
                                                     disabled={upvoting === ticket.id}
                                                     className={`flex items-center space-x-1 px-2 py-1 rounded-lg smooth-transition ${ticket.upvotedBy?.includes(user.email || '')
-                                                            ? 'bg-indigo-500 text-white'
-                                                            : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                        ? 'bg-indigo-500 text-white'
+                                                        : 'bg-white/10 text-white/60 hover:bg-white/20'
                                                         } ${upvoting === ticket.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 >
                                                     <ChevronUp className="w-3 h-3" />

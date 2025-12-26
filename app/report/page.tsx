@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -10,7 +10,9 @@ import { analyzeTicketWithAI } from '@/lib/gemini';
 import { awardTicketReportKarma } from '@/lib/karma';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
-import { Upload, MapPin, FileText, Tag, Image as ImageIcon, Send, ChevronRight, ChevronLeft, Sparkles, Mic, MicOff, Globe } from 'lucide-react';
+import { Upload, MapPin, FileText, Tag, Image as ImageIcon, Send, ChevronRight, ChevronLeft, Sparkles, Mic, MicOff, Globe, RefreshCw, Zap } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { getCachedAnalysis, findSimilarAnalysis, cacheAnalysis, clearAllCache, initializeCache } from '@/lib/aiCache';
 
 // Dynamically import MapPicker with SSR disabled
 const MapPicker = dynamic(() => import('@/components/MapPicker'), {
@@ -62,11 +64,74 @@ export default function ReportPage() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+    // Quota Shield - Caching & Debouncing
+    const [isCheckingCache, setIsCheckingCache] = useState(false);
+    const [cacheHit, setCacheHit] = useState(false);
+    const [manualRefresh, setManualRefresh] = useState(false);
+    const [aiPreview, setAiPreview] = useState<{
+        category: string;
+        urgency: number;
+        summary: string;
+    } | null>(null);
+    const debouncedDescription = useDebounce(description, 1500); // 1.5s delay
+
     useEffect(() => {
         if (!user && !loading) {
             router.push('/login');
         }
     }, [user, loading, router]);
+
+    // Initialize cache on mount
+    useEffect(() => {
+        initializeCache();
+    }, []);
+
+    // Debounced AI analysis with caching
+    useEffect(() => {
+        if (!debouncedDescription || debouncedDescription.trim().length < 10) {
+            setAiPreview(null);
+            setCacheHit(false);
+            return;
+        }
+
+        // Skip if manual refresh is active
+        if (manualRefresh) {
+            setManualRefresh(false);
+            return;
+        }
+
+        const checkCacheAndAnalyze = async () => {
+            setIsCheckingCache(true);
+            setCacheHit(false);
+
+            // Check for exact match
+            let cached = getCachedAnalysis(debouncedDescription);
+
+            // If no exact match, try fuzzy matching
+            if (!cached) {
+                cached = findSimilarAnalysis(debouncedDescription);
+            }
+
+            if (cached) {
+                // Cache hit! Use cached result
+                setCacheHit(true);
+                setAiPreview({
+                    category: cached.category,
+                    urgency: cached.urgency,
+                    summary: cached.summary
+                });
+                setIsCheckingCache(false);
+                showToast('⚡ Instant match found!', 'success');
+            } else {
+                // Cache miss - would call AI here in real implementation
+                // For now, just clear the checking state
+                setIsCheckingCache(false);
+                setAiPreview(null);
+            }
+        };
+
+        checkCacheAndAnalyze();
+    }, [debouncedDescription, manualRefresh]);
 
     const startVoiceRecording = () => {
         if (!('webkitSpeechRecognition' in window)) {
@@ -159,6 +224,14 @@ export default function ReportPage() {
             const aiAnalysis = await analyzeTicketWithAI(description, imageBase64);
             setAiAnalyzing(false);
 
+            // Cache the AI result for future use
+            cacheAnalysis(
+                description,
+                aiAnalysis.category,
+                aiAnalysis.urgency,
+                aiAnalysis.summary
+            );
+
             // Create ticket data with AI enrichment
             const ticketData = {
                 userId: user.uid,
@@ -187,6 +260,21 @@ export default function ReportPage() {
                 // Upvoting fields
                 upvotes: 0,
                 upvotedBy: [],
+                // Status timeline history
+                history: [
+                    {
+                        status: 'open',
+                        timestamp: Date.now(),
+                        message: 'Issue reported',
+                        updatedBy: user.displayName || user.email || 'Student'
+                    },
+                    {
+                        status: 'ai_analyzed',
+                        timestamp: Date.now() + 1000, // 1 second after
+                        message: `AI categorized as ${aiAnalysis.category} with priority ${aiAnalysis.urgency}/10`,
+                        updatedBy: 'AI System'
+                    }
+                ]
             };
 
             // Save to Realtime Database
@@ -337,6 +425,52 @@ export default function ReportPage() {
                                         🎤 Listening in {LANGUAGES.find(l => l.code === selectedLanguage)?.native}...
                                     </p>
                                 )}
+
+                                {/* Quota Shield - Visual Feedback */}
+                                <div className="mt-3 space-y-2">
+                                    {/* Checking Cache Status */}
+                                    {isCheckingCache && (
+                                        <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500" />
+                                            <span className="text-sm text-indigo-300">Checking local records...</span>
+                                        </div>
+                                    )}
+
+                                    {/* Cache Hit Badge */}
+                                    {cacheHit && aiPreview && (
+                                        <div className="space-y-2">
+                                            <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30">
+                                                <Zap className="w-4 h-4 text-emerald-400" />
+                                                <span className="text-sm font-medium text-emerald-300">⚡ Instant Match</span>
+                                                <span className="text-xs text-emerald-400/70">(0.1s)</span>
+                                            </div>
+
+                                            {/* AI Preview */}
+                                            <div className="glass-card rounded-lg p-3 space-y-1">
+                                                <p className="text-xs text-zinc-400">AI Preview:</p>
+                                                <p className="text-sm text-white"><span className="text-zinc-500">Category:</span> {aiPreview.category}</p>
+                                                <p className="text-sm text-white"><span className="text-zinc-500">Priority:</span> {aiPreview.urgency}/10</p>
+                                                <p className="text-sm text-zinc-300">{aiPreview.summary}</p>
+                                            </div>
+
+                                            {/* Manual Refresh Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setManualRefresh(true);
+                                                    setCacheHit(false);
+                                                    setAiPreview(null);
+                                                    clearAllCache();
+                                                    showToast('Cache cleared. Type to get fresh AI analysis.', 'info');
+                                                }}
+                                                className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-300 smooth-transition"
+                                            >
+                                                <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                                <span className="text-sm">Refresh AI Analysis</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div>
