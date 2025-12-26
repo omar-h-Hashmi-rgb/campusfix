@@ -22,14 +22,53 @@ INSTRUCTIONS:
 1. Detect the language of the input
 2. If NOT in English, translate it to English for database storage
 3. Classify into: [Electrical, Water, Cleanliness, Infrastructure, Safety, Technology, Other]
-4. Score urgency from 1-10 (1=low, 10=critical)
+4. Score urgency from 1-10 based on SEVERITY and IMPACT (see priority rules below)
 5. Generate a 3-word summary in English
 6. Provide a brief status confirmation message in the SAME NATIVE LANGUAGE the student used
+
+PRIORITY SCORING RULES (CRITICAL - FOLLOW STRICTLY):
+
+PRIORITY 9-10 (CRITICAL EMERGENCY):
+- Fire, smoke, gas leak, explosion risk
+- Flooding affecting electrical systems or equipment
+- Structural collapse, ceiling/wall falling
+- Exposed live wires, electrocution risk
+- Severe injury risk, immediate danger to life
+- Complete power outage in critical areas
+- Sewage overflow in occupied spaces
+Keywords: fire, flood, collapse, exposed wire, gas leak, emergency, danger, life-threatening, electrocution
+
+PRIORITY 7-8 (HIGH URGENCY):
+- Water pipe burst, major leak
+- Flooding in classrooms/labs/computer rooms
+- No water supply in entire building/floor
+- Broken stairs, railings, safety hazards
+- Non-functional emergency exits
+- Equipment damage risk (computers, machinery)
+- Broken glass, sharp objects in walkways
+Keywords: burst, flooding, no water, broken stairs, equipment at risk, major leak, safety hazard
+
+PRIORITY 5-6 (MEDIUM):
+- Leaking taps, slow drains
+- Broken furniture, doors, windows
+- Malfunctioning AC, fans, lights
+- Dirty washrooms, overflowing bins
+- Minor cracks, paint peeling
+Keywords: leaking, broken, not working, dirty, minor
+
+PRIORITY 1-4 (LOW):
+- Cosmetic issues, paint touch-ups
+- Requests for new equipment
+- Minor cleanliness issues
+- Suggestions, feedback
+Keywords: request, suggestion, minor, cosmetic
+
+IMPORTANT: Analyze the IMPACT and SEVERITY, not just keywords. "Flooding in computer lab" = P9 (equipment damage + safety). "Leaking tap" = P5 (minor inconvenience).
 
 Response must be valid JSON only:
 {
   "category": "...",
-  "urgency": 5,
+  "urgency": 8,
   "summary": "...",
   "translated_text": "English translation (only if original was not English, otherwise null)",
   "native_response": "Brief confirmation in student's native language (e.g., 'आपकी शिकायत दर्ज हो गई है' for Hindi)"
