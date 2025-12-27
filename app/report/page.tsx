@@ -599,11 +599,11 @@ export default function ReportPage() {
                     )}
 
                     {/* Navigation Buttons */}
-                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 mt-8 pt-6 border-t border-white/10">
                         <button
                             onClick={() => setStep(Math.max(1, step - 1))}
                             disabled={step === 1}
-                            className={`flex items-center space-x-2 px-6 py-3 rounded-xl smooth-transition ${step === 1
+                            className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-xl smooth-transition mobile-button touch-target ${step === 1
                                 ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
                                 : 'bg-zinc-800 text-white hover:bg-zinc-700'
                                 }`}
@@ -619,7 +619,7 @@ export default function ReportPage() {
                                     (step === 1 && (!title || !description || !category)) ||
                                     (step === 2 && !location)
                                 }
-                                className={`flex items-center space-x-2 px-6 py-3 rounded-xl smooth-transition ${(step === 1 && (!title || !description || !category)) ||
+                                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-xl smooth-transition mobile-button touch-target ${(step === 1 && (!title || !description || !category)) ||
                                     (step === 2 && !location)
                                     ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
                                     : 'indigo-glow text-white'
@@ -632,7 +632,7 @@ export default function ReportPage() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting}
-                                className="flex items-center space-x-2 px-8 py-3 rounded-xl indigo-glow text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center justify-center space-x-2 px-6 py-3 rounded-xl indigo-glow text-white smooth-transition disabled:opacity-50 disabled:cursor-not-allowed mobile-button touch-target"
                             >
                                 {isSubmitting ? (
                                     <>

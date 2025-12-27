@@ -47,6 +47,13 @@ export default function Navbar() {
                                         <LayoutDashboard className="w-4 h-4" />
                                         <span>Dashboard</span>
                                     </Link>
+                                    <Link
+                                        href="/previous-reports"
+                                        className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700 smooth-transition text-zinc-300 hover:text-white text-sm"
+                                    >
+                                        <LayoutDashboard className="w-4 h-4" />
+                                        <span>Previous Reports</span>
+                                    </Link>
                                     {isAdmin() && (
                                         <Link
                                             href="/admin"
@@ -178,6 +185,15 @@ export default function Navbar() {
                                         >
                                             <LayoutDashboard className="w-5 h-5" />
                                             <span className="font-medium">Dashboard</span>
+                                        </Link>
+
+                                        <Link
+                                            href="/previous-reports"
+                                            onClick={closeMobileMenu}
+                                            className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-700 smooth-transition text-white touch-target"
+                                        >
+                                            <LayoutDashboard className="w-5 h-5" />
+                                            <span className="font-medium">Previous Reports</span>
                                         </Link>
 
                                         {isAdmin() && (

@@ -78,15 +78,16 @@ export default function DashboardPage() {
         const unsubscribe = onValue(ticketsQuery, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const ticketsList: Ticket[] = Object.entries(data)
+                const ticketsArray: Ticket[] = Object.entries(data)
                     .map(([id, ticket]: [string, any]) => ({
                         id,
                         ...ticket,
                     }))
-                    .filter((ticket) => ticket.userId === user.uid)
-                    .sort((a, b) => b.timestamp - a.timestamp); // Newest first
+                    .filter((ticket) => ticket.userEmail === user.email)
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .slice(0, 1); // Only show the most recent ticket
 
-                setTickets(ticketsList);
+                setTickets(ticketsArray);
             } else {
                 setTickets([]);
             }
@@ -330,7 +331,7 @@ export default function DashboardPage() {
                                             </div>
                                         )}
                                     </div>
-                                    <span className="text-zinc-500">
+                                    <span className="text-zinc-500 text-sm wrap-text flex-shrink-0">
                                         {new Date(ticket.timestamp).toLocaleDateString('en-US', {
                                             month: 'short',
                                             day: 'numeric',
