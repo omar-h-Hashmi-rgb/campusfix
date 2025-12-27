@@ -178,27 +178,31 @@ export default function TransparencyPage() {
                                     transition={{ delay: 0.5 + index * 0.1 }}
                                     className="glass rounded-xl p-6 border border-green-500/20 hover:border-green-500/40 smooth-transition"
                                 >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center space-x-2">
-                                            <CheckCircle className="w-5 h-5 text-green-400" />
-                                            <span className="text-xs text-green-400 font-medium">RESOLVED</span>
-                                        </div>
-                                        <span className="text-xs text-zinc-500">
-                                            {new Date(ticket.timestamp).toLocaleDateString()}
-                                        </span>
+                                    <div className="flex items-center space-x-2 mb-3">
+                                        <CheckCircle className="w-5 h-5 text-green-400" />
+                                        <span className="text-xs text-green-400 font-medium">RESOLVED</span>
                                     </div>
-                                    <h3 className="text-lg font-semibold text-white mb-2">{ticket.title}</h3>
+
+                                    <h3 className="text-lg font-semibold text-white mb-2 wrap-text">{ticket.title}</h3>
                                     {ticket.ai_summary && (
-                                        <p className="text-sm text-indigo-300 mb-2">🤖 {ticket.ai_summary}</p>
+                                        <p className="text-sm text-indigo-300 mb-2 wrap-text">🤖 {ticket.ai_summary}</p>
                                     )}
-                                    <p className="text-sm text-zinc-400 line-clamp-2 mb-3">{ticket.description}</p>
-                                    <div className="flex items-center justify-between">
+                                    <p className="text-sm text-zinc-400 line-clamp-2 mb-3 wrap-text">{ticket.description}</p>
+
+                                    <div className="flex flex-wrap items-center gap-3 mb-3">
                                         <span className="text-xs px-3 py-1 rounded-full bg-zinc-800 text-zinc-300">
                                             {ticket.ai_category || ticket.category}
                                         </span>
                                         {ticket.ai_priority && (
                                             <span className="text-xs text-zinc-500">Priority: {ticket.ai_priority}/10</span>
                                         )}
+                                    </div>
+
+                                    {/* Date moved to bottom */}
+                                    <div className="pt-3 border-t border-white/10">
+                                        <span className="text-xs text-zinc-500">
+                                            {new Date(ticket.timestamp).toLocaleDateString()}
+                                        </span>
                                     </div>
                                 </motion.div>
                             ))}

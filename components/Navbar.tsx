@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, User, Home, LayoutDashboard, Shield, Menu, X } from 'lucide-react';
+import { LogOut, User, Home, LayoutDashboard, Shield, Menu, X, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
@@ -71,6 +71,15 @@ export default function Navbar() {
                                     </Link>
                                 </>
                             )}
+
+                            {/* Transparency - Available to everyone */}
+                            <Link
+                                href="/transparency"
+                                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700 smooth-transition text-zinc-300 hover:text-white text-sm"
+                            >
+                                <BarChart3 className="w-4 h-4" />
+                                <span>Transparency</span>
+                            </Link>
 
                             {!user && (
                                 <Link
@@ -215,6 +224,16 @@ export default function Navbar() {
                                             Report Issue
                                         </Link>
 
+                                        {/* Transparency - Available to logged-in users */}
+                                        <Link
+                                            href="/transparency"
+                                            onClick={closeMobileMenu}
+                                            className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-700 smooth-transition text-white touch-target"
+                                        >
+                                            <BarChart3 className="w-5 h-5" />
+                                            <span className="font-medium">Transparency</span>
+                                        </Link>
+
                                         <button
                                             onClick={handleLogout}
                                             className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 smooth-transition text-white touch-target"
@@ -232,6 +251,16 @@ export default function Navbar() {
                                         >
                                             <Home className="w-5 h-5" />
                                             <span className="font-medium">Home</span>
+                                        </Link>
+
+                                        {/* Transparency - Available to everyone */}
+                                        <Link
+                                            href="/transparency"
+                                            onClick={closeMobileMenu}
+                                            className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-700 smooth-transition text-white touch-target"
+                                        >
+                                            <BarChart3 className="w-5 h-5" />
+                                            <span className="font-medium">Transparency</span>
                                         </Link>
 
                                         <Link
