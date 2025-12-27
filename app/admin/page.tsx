@@ -262,7 +262,7 @@ export default function AdminPage() {
                             <Shield className="w-6 h-6 text-indigo-400" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-bold text-white">Admin Command Center</h1>
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white wrap-text">Admin Command Center</h1>
                             <p className="text-zinc-400">Campus-wide maintenance oversight</p>
                         </div>
                     </div>
@@ -282,7 +282,7 @@ export default function AdminPage() {
                         <button
                             onClick={syncToGoogleSheets}
                             disabled={isSyncing}
-                            className="flex items-center space-x-2 px-6 py-3 rounded-xl bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-300 font-medium smooth-transition disabled:opacity-50"
+                            className="flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 smooth-transition text-emerald-300 font-medium border border-emerald-500/30 mobile-button touch-target disabled:opacity-50"
                         >
                             {isSyncing ? (
                                 <>
@@ -399,7 +399,7 @@ export default function AdminPage() {
                                         </div>
 
                                         <div className="flex items-center justify-between text-xs mb-3">
-                                            <div className="flex items-center space-x-3">
+                                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
                                                 {/* Upvote Button */}
                                                 <button
                                                     onClick={() => handleUpvote(ticket.id, ticket.userEmail)}

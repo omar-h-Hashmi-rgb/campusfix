@@ -18,7 +18,7 @@ import { getCachedAnalysis, findSimilarAnalysis, cacheAnalysis, clearAllCache, i
 const MapPicker = dynamic(() => import('@/components/MapPicker'), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-[400px] glass rounded-xl flex items-center justify-center">
+        <div className="w-full h-[300px] sm:h-[400px] glass rounded-xl flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
     ),

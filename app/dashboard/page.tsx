@@ -174,14 +174,14 @@ export default function DashboardPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-4xl font-bold text-white mb-2">
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 wrap-text">
                             Welcome, {user.displayName?.split(' ')[0] || 'Student'}! 👋
                         </h1>
                         <p className="text-zinc-400">Track your campus maintenance requests</p>
                     </div>
                     <Link
                         href="/report"
-                        className="flex items-center space-x-2 px-6 py-3 rounded-xl indigo-glow text-white font-medium"
+                        className="flex items-center justify-center space-x-2 px-6 py-3 rounded-xl indigo-glow text-white font-medium mobile-button"
                     >
                         <Plus className="w-5 h-5" />
                         <span>Report Issue</span>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-3 mb-2">
-                                            <h3 className="text-xl font-semibold text-white">{ticket.title}</h3>
+                                            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 wrap-text">{ticket.title}</h3>
                                             {getStatusBadge(ticket.status)}
                                         </div>
                                         {ticket.ai_summary && (

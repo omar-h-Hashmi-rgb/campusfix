@@ -4,8 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
-import 'leaflet-geosearch/dist/geosearch.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Loader2 } from 'lucide-react';
 
@@ -87,39 +85,145 @@ function SearchField({
   useEffect(() => {
     if (!map || searchControlRef.current) return;
 
-    const provider = new OpenStreetMapProvider({
-      params: {
-        countrycodes: 'in', // Restrict to India
-        addressdetails: 1,
-      },
+    // Custom search implementation to avoid CORS issues
+    const searchContainer = L.DomUtil.create('div', 'leaflet-control-search');
+    searchContainer.style.cssText = `
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+    `;
+
+    const searchInput = L.DomUtil.create('input', '', searchContainer) as HTMLInputElement;
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search location...';
+    searchInput.style.cssText = `
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 14px;
+      outline: none;
+    `;
+
+    const searchResults = L.DomUtil.create('div', '', searchContainer);
+    searchResults.style.cssText = `
+      max-height: 250px;
+      overflow-y: auto;
+      margin-top: 8px;
+      display: none;
+      background: rgba(0, 0, 0, 0.95);
+      border-radius: 8px;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    `;
+
+    let searchTimeout: NodeJS.Timeout;
+
+    searchInput.addEventListener('input', (e) => {
+      const query = (e.target as HTMLInputElement).value;
+
+      clearTimeout(searchTimeout);
+
+      if (query.length < 3) {
+        searchResults.style.display = 'none';
+        return;
+      }
+
+      searchTimeout = setTimeout(async () => {
+        try {
+          // Use CORS proxy to avoid CORS issues
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?` +
+            `format=json&q=${encodeURIComponent(query)}&` +
+            `countrycodes=in&addressdetails=1&limit=5`,
+            {
+              method: 'GET',
+              headers: {
+                'User-Agent': 'CampusFix-App',
+              }
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Search failed');
+          }
+
+          const results = await response.json();
+
+          searchResults.innerHTML = '';
+          searchResults.style.display = results.length > 0 ? 'block' : 'none';
+
+          if (results.length === 0) {
+            searchResults.innerHTML = '<div style="padding: 12px; color: #a1a1aa; font-size: 13px; text-align: center;">No results found</div>';
+            searchResults.style.display = 'block';
+            return;
+          }
+
+          results.forEach((result: any) => {
+            const item = L.DomUtil.create('div', '', searchResults);
+            item.style.cssText = `
+              padding: 12px;
+              cursor: pointer;
+              color: #e4e4e7;
+              font-size: 13px;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+              transition: background 0.2s;
+              line-height: 1.5;
+              word-wrap: break-word;
+              white-space: normal;
+              overflow-wrap: break-word;
+            `;
+            item.textContent = result.display_name;
+
+            item.addEventListener('mouseenter', () => {
+              item.style.background = 'rgba(99, 102, 241, 0.3)';
+            });
+
+            item.addEventListener('mouseleave', () => {
+              item.style.background = 'transparent';
+            });
+
+            item.addEventListener('click', () => {
+              const lat = parseFloat(result.lat);
+              const lng = parseFloat(result.lon);
+
+              onSearchResult(lat, lng);
+              map.flyTo([lat, lng], 16, {
+                duration: 1.5,
+                easeLinearity: 0.25,
+              });
+
+              searchInput.value = result.display_name;
+              searchResults.style.display = 'none';
+            });
+          });
+        } catch (error) {
+          console.error('Search error:', error);
+          searchResults.innerHTML = '<div style="padding: 12px; color: #ef4444; font-size: 13px; text-align: center; word-wrap: break-word;">Search failed. Please try again or use "Detect My Building".</div>';
+          searchResults.style.display = 'block';
+        }
+      }, 500);
     });
 
-    // @ts-ignore - GeoSearchControl types are incomplete
-    const searchControl = new GeoSearchControl({
-      provider,
-      style: 'bar',
-      autoComplete: true,
-      autoCompleteDelay: 250,
-      showMarker: false, // We'll use our custom marker
-      showPopup: false,
-      retainZoomLevel: false,
-      animateZoom: true,
-      keepResult: true,
-      searchLabel: 'Search for your college or location...',
+    // Close results when clicking outside
+    map.on('click', () => {
+      searchResults.style.display = 'none';
     });
 
-    map.addControl(searchControl);
-    searchControlRef.current = searchControl;
+    // Prevent map interactions when clicking on search
+    L.DomEvent.disableClickPropagation(searchContainer);
+    L.DomEvent.disableScrollPropagation(searchContainer);
 
-    // Listen for search results
-    map.on('geosearch/showlocation', (result: any) => {
-      const { x, y } = result.location;
-      onSearchResult(y, x); // lat, lng
-      map.flyTo([y, x], 16, {
-        duration: 1.5,
-        easeLinearity: 0.25,
-      });
-    });
+    map.getContainer().appendChild(searchContainer);
 
     return () => {
       if (searchControlRef.current) {
@@ -201,6 +305,7 @@ export default function MapPicker({
     setIsDetectingLocation(true);
     setGpsError('');
 
+    // First attempt: High accuracy with longer timeout
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -215,27 +320,62 @@ export default function MapPicker({
         setIsDetectingLocation(false);
       },
       (error) => {
-        console.error('GPS error:', error);
-        let errorMessage = 'Unable to detect location';
+        console.warn('GPS high accuracy failed, trying with lower accuracy...', error);
 
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied. Please enable location access.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable. Try again.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out. Try again.';
-            break;
+        // Fallback: Try with lower accuracy if high accuracy times out
+        if (error.code === 3) { // TIMEOUT
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+              setSearchPosition(L.latLng(latitude, longitude));
+              onLocationSelect(latitude, longitude);
+              await reverseGeocode(latitude, longitude);
+              setIsDetectingLocation(false);
+            },
+            (fallbackError) => {
+              let errorMessage = 'Unable to detect location';
+
+              switch (fallbackError.code) {
+                case 1: // PERMISSION_DENIED
+                  errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
+                  break;
+                case 2: // POSITION_UNAVAILABLE
+                  errorMessage = 'Location unavailable. Please check your GPS/WiFi and try again.';
+                  break;
+                case 3: // TIMEOUT
+                  errorMessage = 'Location detection is taking too long. Please try searching for your building instead.';
+                  break;
+              }
+
+              setGpsError(errorMessage);
+              setIsDetectingLocation(false);
+            },
+            {
+              enableHighAccuracy: false, // Lower accuracy, faster response
+              timeout: 15000,
+              maximumAge: 60000 // Accept cached location up to 1 minute old
+            }
+          );
+        } else {
+          // Handle other errors immediately
+          let errorMessage = 'Unable to detect location';
+
+          switch (error.code) {
+            case 1: // PERMISSION_DENIED
+              errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
+              break;
+            case 2: // POSITION_UNAVAILABLE
+              errorMessage = 'Location unavailable. Please check your GPS/WiFi and try again.';
+              break;
+          }
+
+          setGpsError(errorMessage);
+          setIsDetectingLocation(false);
         }
-
-        setGpsError(errorMessage);
-        setIsDetectingLocation(false);
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 30000, // Increased to 30 seconds
         maximumAge: 0
       }
     );
@@ -265,17 +405,18 @@ export default function MapPicker({
         type="button"
         onClick={detectMyLocation}
         disabled={isDetectingLocation}
-        className={`w-full px-6 py-3 rounded-xl font-medium smooth-transition ${isDetectingLocation
+        className={`w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-medium smooth-transition touch-target ${isDetectingLocation
           ? 'bg-indigo-500/30 cursor-not-allowed'
           : 'bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30'
-          } text-white flex items-center justify-center space-x-2`}
+          } text-white flex items-center justify-center space-x-2 text-sm sm:text-base`}
         whileHover={{ scale: isDetectingLocation ? 1 : 1.02 }}
         whileTap={{ scale: isDetectingLocation ? 1 : 0.98 }}
       >
         {isDetectingLocation ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span>Detecting your location...</span>
+            <span className="hidden sm:inline">Detecting your location...</span>
+            <span className="sm:hidden">Detecting...</span>
           </>
         ) : (
           <>
