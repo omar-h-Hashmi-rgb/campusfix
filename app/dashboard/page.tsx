@@ -30,6 +30,7 @@ interface Ticket {
         lng: number;
     };
     imageBase64?: string;
+    imageUrl?: string;
     status: 'open' | 'in-progress' | 'resolved';
     priority: string;
     timestamp: number;
