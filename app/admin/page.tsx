@@ -256,21 +256,24 @@ export default function AdminPage() {
 
             <div className="relative z-10 max-w-[1800px] mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center space-x-3">
+                <div className="mb-8">
+                    {/* Logo and Title Row */}
+                    <div className="flex items-center space-x-3 mb-2">
                         <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
                             <Shield className="w-6 h-6 text-indigo-400" />
                         </div>
-                        <div>
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white wrap-text">Admin Command Center</h1>
-                            <p className="text-zinc-400">Campus-wide maintenance oversight</p>
-                        </div>
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white wrap-text">Admin Command Center</h1>
                     </div>
-                    <div className="flex items-center space-x-3">
+
+                    {/* Subtitle */}
+                    <p className="text-zinc-400 mb-4 ml-15">Campus-wide maintenance oversight</p>
+
+                    {/* Buttons Row */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3 ml-0 sm:ml-15">
                         {/* Sort Toggle */}
                         <button
                             onClick={() => setSortByUpvotes(!sortByUpvotes)}
-                            className={`flex items-center space-x-2 px-6 py-3 rounded-xl border font-medium smooth-transition ${sortByUpvotes
+                            className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-3 rounded-xl border font-medium smooth-transition mobile-button touch-target ${sortByUpvotes
                                 ? 'bg-indigo-500 border-indigo-500 text-white'
                                 : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'
                                 }`}
@@ -282,7 +285,7 @@ export default function AdminPage() {
                         <button
                             onClick={syncToGoogleSheets}
                             disabled={isSyncing}
-                            className="flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 smooth-transition text-emerald-300 font-medium border border-emerald-500/30 mobile-button touch-target disabled:opacity-50"
+                            className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 smooth-transition text-emerald-300 font-medium border border-emerald-500/30 mobile-button touch-target disabled:opacity-50"
                         >
                             {isSyncing ? (
                                 <>

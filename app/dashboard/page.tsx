@@ -277,67 +277,69 @@ export default function DashboardPage() {
                                 key={ticket.id}
                                 className="glass rounded-2xl p-6 border border-indigo-500/20 hover:border-indigo-500/40 smooth-transition"
                             >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-3 mb-2">
-                                            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 wrap-text">{ticket.title}</h3>
+                                <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
+                                    <div className="flex-1 min-w-0 w-full">
+                                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                                            <h3 className="text-lg sm:text-xl font-semibold text-white wrap-text">{ticket.title}</h3>
                                             {getStatusBadge(ticket.status)}
                                         </div>
                                         {ticket.ai_summary && (
-                                            <p className="text-sm text-indigo-300 mb-2">
+                                            <p className="text-sm text-zinc-400 mb-2 wrap-text">
                                                 🤖 AI Summary: {ticket.ai_summary}
                                             </p>
                                         )}
-                                        <p className="text-zinc-400 text-sm line-clamp-2">{ticket.description}</p>
-                                    </div>
-                                    {ticket.imageBase64 && (
-                                        <img
-                                            src={ticket.imageBase64}
-                                            alt="Issue"
-                                            className="w-24 h-24 rounded-xl object-cover border border-white/10 ml-4"
-                                        />
-                                    )}
-                                </div>
+                                        <p className="text-zinc-300 mb-4 wrap-text">{ticket.description}</p>
 
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center space-x-4">
-                                        {/* Upvote Button */}
-                                        <button
-                                            onClick={() => handleUpvote(ticket.id, ticket.userEmail)}
-                                            disabled={upvoting === ticket.id}
-                                            className={`flex items-center space-x-2 px-3 py-2 rounded-lg smooth-transition ${ticket.upvotedBy?.includes(user.email || '')
-                                                ? 'bg-indigo-500 text-white'
-                                                : 'bg-white/10 text-white/60 hover:bg-white/20'
-                                                } ${upvoting === ticket.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            <ChevronUp className="w-4 h-4" />
-                                            <span className="font-medium">{ticket.upvotes || 0}</span>
-                                        </button>
+                                        {ticket.imageUrl && (
+                                            <img
+                                                src={ticket.imageUrl}
+                                                alt="Issue"
+                                                className="w-full max-w-md h-48 object-cover rounded-lg mb-4"
+                                            />
+                                        )}
 
-                                        <div className="flex items-center space-x-1 text-zinc-400">
-                                            <Tag className="w-4 h-4" />
-                                            <span>{ticket.ai_category || ticket.category}</span>
+                                        <div className="flex flex-wrap items-center gap-4 text-sm">
+                                            <button
+                                                onClick={() => handleUpvote(ticket.id, ticket.userEmail)}
+                                                disabled={upvoting === ticket.id}
+                                                className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg border smooth-transition ${ticket.upvotedBy?.includes(user?.email || '')
+                                                    ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300'
+                                                    : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                    } ${upvoting === ticket.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <ChevronUp className="w-4 h-4" />
+                                                <span className="font-medium">{ticket.upvotes || 0}</span>
+                                            </button>
+
+                                            <div className="flex items-center space-x-1 text-zinc-400">
+                                                <Tag className="w-4 h-4" />
+                                                <span>{ticket.ai_category || ticket.category}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-1 text-zinc-400">
+                                                <MapPin className="w-4 h-4" />
+                                                <span>
+                                                    {ticket.location.lat.toFixed(4)}, {ticket.location.lng.toFixed(4)}
+                                                </span>
+                                            </div>
+                                            {ticket.ai_priority && (
+                                                <div className={`flex items-center space-x-1 ${getPriorityColor(ticket.ai_priority)}`}>
+                                                    <AlertCircle className="w-4 h-4" />
+                                                    <span>Priority: {ticket.ai_priority}/10</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="flex items-center space-x-1 text-zinc-400">
-                                            <MapPin className="w-4 h-4" />
-                                            <span>
-                                                {ticket.location.lat.toFixed(4)}, {ticket.location.lng.toFixed(4)}
+
+                                        {/* Date moved to bottom */}
+                                        <div className="mt-4 pt-4 border-t border-white/10">
+                                            <span className="text-zinc-500 text-sm wrap-text">
+                                                {new Date(ticket.timestamp).toLocaleDateString('en-US', {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    year: 'numeric',
+                                                })}
                                             </span>
                                         </div>
-                                        {ticket.ai_priority && (
-                                            <div className={`flex items-center space-x-1 ${getPriorityColor(ticket.ai_priority)}`}>
-                                                <AlertCircle className="w-4 h-4" />
-                                                <span>Priority: {ticket.ai_priority}/10</span>
-                                            </div>
-                                        )}
                                     </div>
-                                    <span className="text-zinc-500 text-sm wrap-text flex-shrink-0">
-                                        {new Date(ticket.timestamp).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric',
-                                        })}
-                                    </span>
                                 </div>
 
                                 {/* Real-Time Status Timeline */}
