@@ -2,88 +2,84 @@
 
 import Link from 'next/link';
 import { ArrowRight, Zap, Shield, Sparkles } from 'lucide-react';
+import { HorizonHero } from '@/components/ui/horizon-hero-section';
+import WaveFeatureCard from '@/components/ui/wave-feature-card';
+import { GradientBackground } from '@/components/ui/gradient-background';
 
 export default function Home() {
     return (
-        <div className="min-h-screen relative overflow-hidden">
-            {/* Gradient Background */}
-            <div className="absolute inset-0 gradient-indigo pointer-events-none" />
+        <div className="relative min-h-[300vh]">
+            {/* 3D Background - Fixed in component */}
+            <HorizonHero />
 
-            {/* Hero Section */}
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
-                <div className="text-center space-y-8">
-                    {/* Badge */}
-                    <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass border border-indigo-500/30">
-                        <Sparkles className="w-4 h-4 text-indigo-400" />
-                        <span className="text-sm text-indigo-300">Powered by AI</span>
+            {/* Content Overlays for Scroll sections - Transparent spacers to allow scrolling */}
+            <div className="h-screen w-full relative z-0" /> {/* Section 1 Spacer */}
+            <div className="h-screen w-full relative z-0" /> {/* Section 2 Spacer */}
+            <div className="h-screen w-full relative z-0" /> {/* Section 3 Spacer */}
+
+            {/* Final Content Section - Visible after scrolling through 3D effect */}
+            <GradientBackground className="relative z-10 border-t border-white/10 min-h-screen">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+                    <div className="text-center mb-24">
+                        <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-8 drop-shadow-xl">
+                            Ready to Transform <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Campus Maintenance?</span>
+                        </h2>
+                        <p className="text-xl md:text-2xl text-zinc-300 max-w-3xl mx-auto mb-12 leading-relaxed">
+                            Join the revolution in intelligent facility management. Report, track, and resolve issues with the power of Google Gemini AI.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link
+                                href="/tour"
+                                className="px-8 py-4 rounded-xl font-bold bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-2 backdrop-blur-md"
+                            >
+                                <Sparkles className="w-5 h-5 text-indigo-400" />
+                                <span>Take a Tour</span>
+                            </Link>
+                            <Link
+                                href="/auth"
+                                className="px-8 py-4 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:shadow-[0_0_50px_rgba(99,102,241,0.7)] hover:scale-105 transition-all flex items-center gap-2"
+                            >
+                                <span>Get Started</span>
+                                <ArrowRight className="w-5 h-5" />
+                            </Link>
+                        </div>
                     </div>
 
-                    {/* Main Heading */}
-                    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
-                        <span className="block text-white">CampusFix AI</span>
-                        <span className="block mt-2 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                            Intelligent Campus Maintenance Protocol
-                        </span>
-                    </h1>
-
-                    {/* Subtitle */}
-                    <p className="max-w-2xl mx-auto text-lg sm:text-xl text-zinc-400">
-                        Transform campus maintenance with AI-powered issue detection, smart reporting,
-                        and automated resolution tracking. Built for the modern campus.
-                    </p>
-
-                    {/* CTA Buttons */}
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link
-                            href="/onboarding"
-                            className="group inline-flex items-center space-x-2 px-8 py-4 rounded-xl backdrop-blur-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-lg smooth-transition"
-                        >
-                            <Sparkles className="w-5 h-5" />
-                            <span>Take a Tour</span>
-                        </Link>
-                        <Link
-                            href="/login"
-                            className="group inline-flex items-center space-x-2 px-8 py-4 rounded-xl indigo-glow text-white font-semibold text-lg"
-                        >
-                            <span>Get Started</span>
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 smooth-transition" />
-                        </Link>
+                    {/* Feature Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <WaveFeatureCard
+                            title="Lightning Fast"
+                            description="Report issues instantly with AI-powered categorization and priority assignment."
+                            icon={Zap}
+                            tag="Performance"
+                            color="#818cf8" // Indigo-400
+                            delay={0}
+                        />
+                        <WaveFeatureCard
+                            title="Secure & Private"
+                            description="Enterprise-grade security with Firebase authentication and real-time database."
+                            icon={Shield}
+                            tag="Security"
+                            color="#c084fc" // Purple-400
+                            delay={0.2}
+                        />
+                        <WaveFeatureCard
+                            title="AI-Powered"
+                            description="Smart insights and automated workflows powered by Google Gemini AI."
+                            icon={Sparkles}
+                            tag="Intelligence"
+                            color="#f472b6" // Pink-400
+                            delay={0.4}
+                        />
                     </div>
 
-                    {/* Feature Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
-                        <div className="glass-premium rounded-2xl p-6 md:p-8 hover-lift smooth-transition hover:border-indigo-500/50">
-                            <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-4">
-                                <Zap className="w-6 h-6 text-indigo-400" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Lightning Fast</h3>
-                            <p className="text-zinc-400">
-                                Report issues instantly with AI-powered categorization and priority assignment
-                            </p>
-                        </div>
-
-                        <div className="glass-premium rounded-2xl p-6 md:p-8 hover-lift smooth-transition hover:border-purple-500/50">
-                            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
-                                <Shield className="w-6 h-6 text-purple-400" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Secure & Private</h3>
-                            <p className="text-zinc-400">
-                                Enterprise-grade security with Firebase authentication and real-time database
-                            </p>
-                        </div>
-
-                        <div className="glass-premium rounded-2xl p-6 md:p-8 hover-lift smooth-transition hover:border-pink-500/50">
-                            <div className="w-12 h-12 rounded-xl bg-pink-500/20 flex items-center justify-center mb-4">
-                                <Sparkles className="w-6 h-6 text-pink-400" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-white mb-2">AI-Powered</h3>
-                            <p className="text-zinc-400">
-                                Smart insights and automated workflows powered by Google AI Studio
-                            </p>
-                        </div>
+                    <div className="mt-24 text-center text-zinc-500 text-sm">
+                        <p>&copy; 2026 CampusFix AI. Built with 💖 by Omar Hashmi.</p>
                     </div>
                 </div>
-            </div>
+            </GradientBackground>
         </div>
     );
 }
